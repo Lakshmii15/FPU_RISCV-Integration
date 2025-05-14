@@ -1,4 +1,6 @@
-module fp_add_sub (input clk,input reset,
+module fp_add_sub(
+    input clk,
+    input reset,
     input  [31:0] A,  // FP number A
     input  [31:0] B,  // FP number B
     input  op, // 0 for add, 1 for subtract
@@ -17,13 +19,21 @@ module fp_add_sub (input clk,input reset,
     // Instantiate the comparator
     fp_Comp comp_inst (
         .clk(clk),
-        .reset(reste),
+        .reset(reset),
         .A(A),
         .B(B),
         .res(comp_res)
     );
 
     always@(posedge clk, posedge reset) begin
+        if(reset) begin
+            signA = 1'd0;
+            signB = 1'd0;
+            expA = 8'd0;  
+            expB = 8'd0;
+            mantA = 24'd0;
+            mantB = 24'd0;                      
+        end
         // Decompose inputs
         signA <= A[31];
         expA  <= A[30:23];
@@ -64,17 +74,14 @@ module fp_add_sub (input clk,input reset,
             end
         end
 
-        // Normalize result
+       // Normalize result
         if (mantSum[24]) begin
-            mantSum <=mantSum >> 1;
-            resultExp <=resultExp + 1;
+            mantSum <= mantSum >> 1;
+            resultExp <= resultExp + 1;
         end 
-        else begin
-            // Shift left until MSB = 1 (optional simple normalization)
-            while (mantSum[23] == 0 && resultExp > 0) begin
-                mantSum <= mantSum << 1;
-                resultExp <= resultExp - 1;
-            end
+        else if (mantSum[23] == 0 && resultExp > 0) begin
+            mantSum <= mantSum << 1;
+            resultExp <= resultExp - 1;
         end
 
         // Assemble result
