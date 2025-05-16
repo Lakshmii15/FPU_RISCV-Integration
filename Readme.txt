@@ -57,3 +57,21 @@ Simulation: Ensure fp_Comp’s output stabilizes within the same clock cycle as 
 Synthesis: Check synthesis reports to ensure the combined modules meet timing constraints. Adjust clock frequency or pipeline stages as needed.
 Testbench: If you need a testbench to verify the integrated module, I can provide one tailored to these test cases.
 This updated module correctly integrates fp_Comp into fpu_add_sub, ensuring robust IEEE 754-compliant addition and subtraction with accurate comparisons. Let me know if you need further modifications or additional components (e.g., a testbench or pipelined version)!
+
+
+The division module handles the division of two 32-bit floating-point numbers, including special cases like zero, infinity, and NaN. The testbench verifies the module's functionality with various test cases.
+
+FPU Division Module
+The module performs division by:
+
+Extracting sign, exponent, and mantissa from the two input operands.
+Computing the result's sign (XOR of input signs).
+Subtracting exponents and adjusting for bias.
+Dividing mantissas using a simple iterative division algorithm.
+Normalizing the result and handling special cases (e.g., overflow, underflow, NaN).
+Testbench
+The testbench tests the division module with:
+
+Normal numbers.
+Special cases (zero, infinity, NaN).
+Denormalized numbers and edge cases. It applies test vectors and monitors the output.
