@@ -1,4 +1,4 @@
-module fpu_div_tb;
+module fp_div_tb;
 
     // Inputs
     reg [31:0] A;
@@ -7,16 +7,16 @@ module fpu_div_tb;
     reg reset;
 
     // Outputs
-    wire [31:0] result;
+    wire [31:0] Result;
     wire valid;
 
     // Instantiate the Unit Under Test (UUT)
-    fpu_div uut (
+    fp_div uut (
         .A(A),
         .B(B),
         .clk(clk),
         .reset(reset),
-        .result(result),
+        .Result(Result),
         .valid(valid)
     );
 

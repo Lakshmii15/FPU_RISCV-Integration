@@ -1,35 +1,88 @@
-module fp_Comp (
-    input clk,
-    input reset,
-    input [31:0] A,  // FP number A
-    input [31:0] B,  // FP number B
-    output reg res
+module fp_comp(
+    input [31:0] A, // First IEEE 754 number
+    input [31:0] B, // Second IEEE 754 number
+    output reg equal, // 1 if A == B
+    output reg less,  // 1 if A < B
+    output reg greater // 1 if A > B
 );
+    // Extract sign, exponent, and mantissa
+    wire sign_A = A[31];
+    wire sign_B = B[31];
+    wire [7:0] exp_A = A[30:23];
+    wire [7:0] exp_B = B[30:23];
+    wire [22:0] mant_A = A[22:0];
+    wire [22:0] mant_B = B[22:0];
 
-    // Wires for decomposition
-    wire [7:0] expA = A[30:23];
-    wire [7:0] expB = B[30:23];
-    wire [22:0] mantA = A[22:0];
-    wire [22:0] mantB = B[22:0];
+    // Check for special cases (NaN, infinity, zero)
+    wire is_zero_A = (exp_A == 8'h00) && (mant_A == 23'h0);
+    wire is_zero_B = (exp_B == 8'h00) && (mant_B == 23'h0);
+    wire is_nan_A = (exp_A == 8'hFF) && (mant_A != 23'h0);
+    wire is_nan_B = (exp_B == 8'hFF) && (mant_B != 23'h0);
+    wire is_inf_A = (exp_A == 8'hFF) && (mant_A == 23'h0);
+    wire is_inf_B = (exp_B == 8'hFF) && (mant_B == 23'h0);
 
-    always @(posedge clk, posedge reset) begin
-        if (reset) begin
-            res <= 1'b0;
-        end else begin
-            // If signs differ
-            if (A[31] != B[31]) begin
-                res <= ~A[31]; // A is positive (0) -> A >= B -> result = 1
+    always @(A, B) begin
+        // Default outputs
+        equal = 1'b0;
+        less = 1'b0;
+        greater = 1'b0;
+
+        // Handle NaN cases (no comparison possible)
+        if (is_nan_A || is_nan_B) begin
+            equal = 1'b0;
+            less = 1'b0;
+            greater = 1'b0;
+        end
+        // Handle zero cases
+        else if (is_zero_A && is_zero_B) begin
+            equal = 1'b1;
+        end
+        // Handle infinity cases
+        else if (is_inf_A && is_inf_B) begin
+            if (sign_A == sign_B)
+                equal = 1'b1;
+            else if (sign_A == 1'b1)
+                less = 1'b1;
+            else
+                greater = 1'b1;
+        end
+        else if (is_inf_A) begin
+            if (sign_A == 1'b1)
+                less = 1'b1;
+            else
+                greater = 1'b1;
+        end
+        else if (is_inf_B) begin
+            if (sign_B == 1'b1)
+                greater = 1'b1;
+            else
+                less = 1'b1;
+        end
+        // Normal comparison
+        else begin
+            // Compare signs
+            if (sign_A > sign_B) begin
+                less = 1'b1;
             end
-            // If both signs are the same
-            else if (expA != expB) begin
-                res <= (expA > expB && A[31] == 1'b0) ? 1'b1 : 1'b0;
-            end 
+            else if (sign_A < sign_B) begin
+                greater = 1'b1;
+            end
             else begin
-                // Exponents equal, compare mantissa
-                if (mantA != mantB) begin
-                    res <= (mantA > mantB && A[31] == 1'b0) ? 1'b1 : 1'b0;
-                end else begin
-                    res <= 1'b0; // A == B
+                // Same sign, compare exponent and mantissa
+                if (exp_A == exp_B && mant_A == mant_B) begin
+                    equal = 1'b1;
+                end
+                else if (sign_A == 1'b0) begin // Positive numbers
+                    if (exp_A > exp_B || (exp_A == exp_B && mant_A > mant_B))
+                        greater = 1'b1;
+                    else
+                        less = 1'b1;
+                end
+                else begin // Negative numbers
+                    if (exp_A > exp_B || (exp_A == exp_B && mant_A > mant_B))
+                        less = 1'b1;
+                    else
+                        greater = 1'b1;
                 end
             end
         end

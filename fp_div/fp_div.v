@@ -1,9 +1,9 @@
-module fpu_div (
-    input wire [31:0] A,       // First operand
-    input wire [31:0] B,       // Second operand
+module fp_div (
     input wire clk,            // Clock
     input wire reset,          // Reset
-    output reg [31:0] result,  // Result
+    input wire [31:0] A,       // First operand
+    input wire [31:0] B,       // Second operand
+    output reg [31:0] Result,  // Result
     output reg valid           // Output valid flag
 );
 
@@ -50,7 +50,7 @@ module fpu_div (
     always @(posedge clk or posedge reset) begin
         if (reset) begin
             state <= IDLE;
-            result <= 32'h0;
+            Result <= 32'h0;
             valid <= 1'b0;
         end else begin
             case (state)
@@ -64,39 +64,39 @@ module fpu_div (
                 CHECK_SPECIAL: begin
                     // NaN cases
                     if (is_nan_A || is_nan_B) begin
-                        result <= {1'b0, 8'hFF, 23'h400000}; // NaN
+                        Result <= {1'b0, 8'hFF, 23'h400000}; // NaN
                         valid <= 1'b1;
                         state <= IDLE;
                     end
                     // Infinity cases
                     else if (is_inf_A && is_inf_B) begin
-                        result <= {1'b0, 8'hFF, 23'h400000}; // NaN
+                        Result <= {1'b0, 8'hFF, 23'h400000}; // NaN
                         valid <= 1'b1;
                         state <= IDLE;
                     end
                     else if (is_inf_A) begin
-                        result <= {sign_A ^ sign_B, 8'hFF, 23'h0}; // Inf
+                        Result <= {sign_A ^ sign_B, 8'hFF, 23'h0}; // Inf
                         valid <= 1'b1;
                         state <= IDLE;
                     end
                     else if (is_inf_B) begin
-                        result <= {sign_A ^ sign_B, 8'h00, 23'h0}; // Zero
+                        Result <= {sign_A ^ sign_B, 8'h00, 23'h0}; // Zero
                         valid <= 1'b1;
                         state <= IDLE;
                     end
                     // Zero cases
                     else if (is_zero_A && is_zero_B) begin
-                        result <= {1'b0, 8'hFF, 23'h400000}; // NaN
+                        Result <= {1'b0, 8'hFF, 23'h400000}; // NaN
                         valid <= 1'b1;
                         state <= IDLE;
                     end
                     else if (is_zero_A) begin
-                        result <= {sign_A ^ sign_B, 8'h00, 23'h0}; // Zero
+                        Result <= {sign_A ^ sign_B, 8'h00, 23'h0}; // Zero
                         valid <= 1'b1;
                         state <= IDLE;
                     end
                     else if (is_zero_B) begin
-                        result <= {sign_A ^ sign_B, 8'hFF, 23'h0}; // Inf
+                        Result <= {sign_A ^ sign_B, 8'hFF, 23'h0}; // Inf
                         valid <= 1'b1;
                         state <= IDLE;
                     end
@@ -145,12 +145,12 @@ module fpu_div (
                     // Handle overflow/underflow
                     if (exp_diff[8] || exp_diff > 9'd254) begin
                         // Overflow to infinity
-                        result <= {sign_res, 8'hFF, 23'h0};
+                        Result <= {sign_res, 8'hFF, 23'h0};
                         valid <= 1'b1;
                         state <= IDLE;
                     end else if (exp_diff < 9'd1) begin
                         // Underflow to zero
-                        result <= {sign_res, 8'h00, 23'h0};
+                        Result <= {sign_res, 8'h00, 23'h0};
                         valid <= 1'b1;
                         state <= IDLE;
                     end else begin
@@ -159,7 +159,7 @@ module fpu_div (
                 end
 
                 FINALIZE: begin
-                    result <= {sign_res, exp_res, mant_res};
+                    Result <= {sign_res, exp_res, mant_res};
                     valid <= 1'b1;
                     state <= IDLE;
                 end
